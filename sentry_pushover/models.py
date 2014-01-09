@@ -31,15 +31,21 @@ import logging
 
 from django import forms
 from django.core.urlresolvers import reverse
+from django.utils.safestring import mark_safe
 
 from sentry.utils import settings
 from sentry.plugins.bases.notify import NotifyPlugin, NotifyConfigurationForm
 from sentry.conf import server
 from sentry.utils.http import absolute_uri
+from sentry.web.helpers import render_to_string
 
 import sentry_pushover
 import requests
 
+
+message_template = """
+ok
+"""
 
 choices_levels = ((
     (logging.CRITICAL, 'CRITICAL'), 
@@ -119,7 +125,16 @@ class PushoverNotifications(NotifyPlugin):
 
     def notify_users(self, group, event, fail_silently=False):
         project = event.project
-        new_only = self.get_option('new_only', project)
+        interface_list = []
+
+        for interface in event.interfaces.itervalues():
+            body = interface.to_email_html(event)
+
+            if not body:
+                # Skip
+                continue
+
+            interface_list.append((interface.get_title(), mark_safe(body)))
 
         title = ('[%s] %s' % (
             project.name.encode('utf-8'),
@@ -127,13 +142,13 @@ class PushoverNotifications(NotifyPlugin):
         ))
 
         link = group.get_absolute_url()
-
-        message = u''
-        message += u'%s\r\n' % ('\r\n'.join(event.error().splitlines()).strip())
-        message += u'Server: %s\r\n' % event.server_name
-        message += u'Group: %s\r\n' % event.group
-        message += u'Logger: %s\r\n' % event.logger
-        message += u'Message: %s\r\n' % event.message
+        message = render_to_string(message_template, ({
+            'group': group,
+            'event': event,
+            'tags': event.get_tags(),
+            'link': link,
+            'interfaces': interface_list
+        }))
 
         if len(message) > self.BASE_MAXIMUM_MESSAGE_LENGTH:
             message = message[:self.BASE_MAXIMUM_MESSAGE_LENGTH - 4] + ' ...'
