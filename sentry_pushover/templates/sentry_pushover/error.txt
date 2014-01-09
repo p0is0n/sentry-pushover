@@ -1,9 +1,6 @@
 {% spaceless %}
 {% autoescape off %}
-{{ group.project.name }}: {{ event.message }}
-
-Details
--------
+{{ event.message }}
 
 Logger: {{ event.logger }}
 First Seen: {{ group.first_seen|date }}
