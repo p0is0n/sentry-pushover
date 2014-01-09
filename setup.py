@@ -46,7 +46,7 @@ setup(
             'sentry_pushover = sentry_pushover',
         ],
         'sentry.plugins': [
-            'pushover = sentry_pushover.plugin:PushoverNotifications'
+            'pushover = sentry_pushover.models:PushoverNotifications'
         ]
     },
     classifiers=[

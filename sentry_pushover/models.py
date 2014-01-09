@@ -28,17 +28,15 @@ along with Sentry-Pushover.  If not, see <http://www.gnu.org/licenses/>.
 import time
 import logging
 
-from django import forms
-
 from sentry.conf import settings
-from sentry.plugins.bases.notify import NotifyPlugin
+from sentry.plugins.bases.notify import NotifyPlugin, NotifyConfigurationForm
 from sentry.conf import server
 
 import sentry_pushover
 import requests
 
 
-class PushoverSettingsForm(forms.Form):
+class PushoverSettingsForm(NotifyConfigurationForm):
 
     choices = ((logging.CRITICAL, 'CRITICAL'), (logging.ERROR, 'ERROR'), (logging.WARNING,
                'WARNING'), (logging.INFO, 'INFO'), (logging.DEBUG, 'DEBUG'))
@@ -74,6 +72,13 @@ class PushoverNotifications(NotifyPlugin):
     def is_configured(self, project):
         return all(self.get_option(key, project) for key in ('userkey', 'apikey'))
 
+    def notify_users(self, group, event, fail_silently=False):
+        project = event.project
+        new_only = self.get_option('new_only', project)
+
+        self.send_notification(self, 'title', 'message', 'link', project)
+
+    """
     def on_alert(self, alert, **kwargs):
         project = alert.project
         new_only = self.get_option('new_only', project)
@@ -105,6 +110,7 @@ class PushoverNotifications(NotifyPlugin):
         message += 'Message: %s\n' % event.message
 
         self.send_notification(title, message, link, project)
+    """
 
     def send_notification(self, title, message, link, project):
 
