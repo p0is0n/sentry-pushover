@@ -44,8 +44,8 @@ import sentry_pushover
 import requests
 
 
-message_template = 'sentry/emails/error.txt'
-message_template_title = ''
+message_template = 'sentry_pushover/error.txt'
+message_template_alert = 'sentry_pushover/alert.txt'
 
 choices_levels = ((
     (logging.CRITICAL, 'CRITICAL'), 
