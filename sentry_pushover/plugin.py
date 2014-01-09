@@ -35,7 +35,6 @@ from sentry.plugins.bases.notify import NotifyPlugin
 from sentry.conf import server
 
 import sentry_pushover
-
 import requests
 
 
@@ -72,24 +71,21 @@ class PushoverNotifications(NotifyPlugin):
     version = sentry_pushover.VERSION
     project_conf_form = PushoverSettingsForm
 
-    def can_enable_for_projects(self):
-        return True
-
-    def is_setup(self, project):
+    def is_configured(self, project):
         return all(self.get_option(key, project) for key in ('userkey', 'apikey'))
 
     def on_alert(self, alert, **kwargs):
         project = alert.project
         new_only = self.get_option('new_only', project)
-        
-        if not self.is_setup(project):
+
+        if not self.is_configured(project):
             return 
 
     def post_process(self, group, event, is_new, is_sample, **kwargs):
         project = event.project
         new_only = self.get_option('new_only', project)
 
-        if not self.is_setup(project):
+        if not self.is_configured(project):
             return 
 
         if new_only and not is_new:
