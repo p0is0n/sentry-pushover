@@ -128,7 +128,7 @@ class PushoverNotifications(NotifyPlugin):
         interface_list = []
 
         for interface in event.interfaces.itervalues():
-            body = interface.to_email_html(event)
+            body = interface.to_string(event)
 
             if not body:
                 # Skip
@@ -201,7 +201,7 @@ class PushoverNotifications(NotifyPlugin):
             'url': link,
             'url_title': 'More info',
             'sound': (self.get_option('sound', project) or 'pushover'),
-            #'priority': self.get_option('priority', project),
+            'priority': self.get_option('priority', project),
         })
 
         requests.post('https://api.pushover.net/1/messages.json', params=params)
