@@ -6,4 +6,4 @@ Installation
 ------------
 sentry-pushover is available via PyPI, the python package index.
 
-To install simple type `pip install https://github.com/dz0ny/sentry-pushover/archive/master.zip`.
+To install simple type `pip install https://github.com/p0is0n/sentry-pushover/archive/master.zip`.
