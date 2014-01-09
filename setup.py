@@ -40,6 +40,9 @@ setup(
     long_description=__doc__,
     license='GPL',
     packages=find_packages(exclude=['tests']),
+    package_data = {
+        'sentry_pushover': ['templates/sentry_pushover/*.txt'],
+    },
     install_requires=install_requires,
     entry_points={
         'sentry.apps': [
@@ -57,4 +60,5 @@ setup(
         'Topic :: Software Development'
     ],
     include_package_data=True,
+    zip_safe=False,
 )
