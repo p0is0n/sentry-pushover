@@ -25,6 +25,11 @@ along with Sentry-Pushover.  If not, see <http://www.gnu.org/licenses/>.
 '''
 from setuptools import setup, find_packages
 
+install_requires = [
+    'requests',
+    'sentry>=4.6.0',
+]
+
 setup(
     name='sentry-pushover',
     version='1.0.5',
@@ -35,9 +40,7 @@ setup(
     long_description=__doc__,
     license='GPL',
     packages=find_packages(exclude=['tests']),
-    install_requires=[
-        'requests',
-    ],
+    install_requires=install_requires,
     entry_points={
         'sentry.apps': [
             'sentry_pushover = sentry_pushover',
@@ -46,5 +49,12 @@ setup(
             'pushover = sentry_pushover.plugin:PushoverNotifications'
         ]
     },
+    classifiers=[
+        'Framework :: Django',
+        'Intended Audience :: Developers',
+        'Intended Audience :: System Administrators',
+        'Operating System :: OS Independent',
+        'Topic :: Software Development'
+    ],
     include_package_data=True,
 )
