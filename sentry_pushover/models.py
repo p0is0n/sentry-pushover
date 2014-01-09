@@ -44,9 +44,8 @@ import sentry_pushover
 import requests
 
 
-message_template = Template("""
-ok
-""")
+message_template = 'sentry/emails/error.txt'
+message_template_title = ''
 
 choices_levels = ((
     (logging.CRITICAL, 'CRITICAL'), 
