@@ -32,6 +32,7 @@ import logging
 from django import forms
 from django.core.urlresolvers import reverse
 from django.utils.safestring import mark_safe
+from django.template import Template
 
 from sentry.utils import settings
 from sentry.plugins.bases.notify import NotifyPlugin, NotifyConfigurationForm
@@ -43,9 +44,9 @@ import sentry_pushover
 import requests
 
 
-message_template = """
+message_template = Template("""
 ok
-"""
+""")
 
 choices_levels = ((
     (logging.CRITICAL, 'CRITICAL'), 
