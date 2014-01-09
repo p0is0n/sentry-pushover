@@ -87,6 +87,8 @@ class PushoverSettingsForm(NotifyConfigurationForm):
 
 class PushoverNotifications(NotifyPlugin):
 
+    BASE_MAXIMUM_MESSAGE_LENGTH = 512
+
     author = 'Janez Troha & p0is0n'
     author_url = 'http://dz0ny.info'
 
@@ -126,12 +128,18 @@ class PushoverNotifications(NotifyPlugin):
 
         link = group.get_absolute_url()
 
-        message = ''
-        message += '%s\r\n' % ('\r\n'.join(event.error().encode('utf-8').splitlines()).strip)
-        message += 'Server: %s\r\n' % event.server_name
-        message += 'Group: %s\r\n' % event.group
-        message += 'Logger: %s\r\n' % event.logger
-        message += 'Message: %s\r\n' % event.message
+        message = u''
+        message += u'%s\r\n' % ('\r\n'.join(event.error().splitlines()).strip())
+        message += u'Server: %s\r\n' % event.server_name
+        message += u'Group: %s\r\n' % event.group
+        message += u'Logger: %s\r\n' % event.logger
+        message += u'Message: %s\r\n' % event.message
+
+        if len(message) > self.BASE_MAXIMUM_MESSAGE_LENGTH:
+            message = message[:self.BASE_MAXIMUM_MESSAGE_LENGTH - 4] + ' ...'
+            message = message.encode('utf8')
+        else:
+            message = message.encode('utf8')
 
         self.send_notification(title, message, link, project)
 
@@ -170,8 +178,6 @@ class PushoverNotifications(NotifyPlugin):
         self.notify_users(group, event)
 
     def send_notification(self, title, message, link, project):
-        # see https://pushover.net/api
-
         params = ({
             'user': self.get_option('userkey', project),
             'token': self.get_option('apikey', project),
