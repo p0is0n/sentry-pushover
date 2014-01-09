@@ -39,6 +39,9 @@ setup(
         'requests',
     ],
     entry_points={
+        'sentry.apps': [
+            'sentry_pushover = sentry_pushover',
+        ],
         'sentry.plugins': [
             'pushover = sentry_pushover.plugin:PushoverNotifications'
         ]
