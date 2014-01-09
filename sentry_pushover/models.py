@@ -28,7 +28,7 @@ along with Sentry-Pushover.  If not, see <http://www.gnu.org/licenses/>.
 import time
 import logging
 
-from sentry.conf import settings
+from sentry.utils import settings
 from sentry.plugins.bases.notify import NotifyPlugin, NotifyConfigurationForm
 from sentry.conf import server
 
