@@ -41,15 +41,47 @@ import sentry_pushover
 import requests
 
 
-class PushoverSettingsForm(NotifyConfigurationForm):
+choices_levels = ((
+    (logging.CRITICAL, 'CRITICAL'), 
+    (logging.ERROR, 'ERROR'), 
+    (logging.WARNING, 'WARNING'), 
+    (logging.INFO, 'INFO'),
+    (logging.DEBUG, 'DEBUG')
+))
 
-    choices = ((logging.CRITICAL, 'CRITICAL'), (logging.ERROR, 'ERROR'), (logging.WARNING,
-               'WARNING'), (logging.INFO, 'INFO'), (logging.DEBUG, 'DEBUG'))
+choices_sounds = ((
+    ('pushover', 'Pushover (default)'),
+    ('bike', 'Bike'),
+    ('bugle', 'Bugle'),
+    ('cashregister', 'Cash Register'),
+    ('classical', 'Classical'),
+    ('cosmic', 'Cosmic'),
+    ('falling', 'Falling'),
+    ('gamelan', 'Gamelan'),
+    ('incoming', 'Incoming'),
+    ('intermission', 'Intermission'),
+    ('magic', 'Magic'),
+    ('mechanical', 'Mechanical'),
+    ('pianobar', 'Piano Bar'),
+    ('siren', 'Siren'),
+    ('spacealarm', 'Space Alarm'),
+    ('tugboat', 'Tug Boat'),
+    ('alien', 'Alien Alarm (long)'),
+    ('climb', 'Climb (long)'),
+    ('persistent', 'Persistent (long)'),
+    ('echo', 'Pushover Echo (long)'),
+    ('updown', 'Up Down (long)'),
+    ('none', 'None (silent)')
+))
+
+
+class PushoverSettingsForm(NotifyConfigurationForm):
 
     userkey = forms.CharField(help_text='Your user key. See https://pushover.net/')
     apikey = forms.CharField(help_text='Application API token. See https://pushover.net/apps/')
     new_only = forms.BooleanField(help_text='Only send new messages.', required=False)
-    severity = forms.ChoiceField(choices=choices, help_text="Don't send notifications for events below this level.")
+    severity = forms.ChoiceField(choices=choices_levels, help_text="Don't send notifications for events below this level.")
+    sound = forms.ChoiceField(choices=choices_sounds, help_text="When sending notifications through the Pushover API, the sound parameter may be set to one of the following.", required=True)
     priority = forms.BooleanField(required=False, help_text='High-priority notifications, also bypasses quiet hours.')
 
 
@@ -95,11 +127,11 @@ class PushoverNotifications(NotifyPlugin):
         link = group.get_absolute_url()
 
         message = ''
-        message += event.error().encode('utf-8').splitlines()[0]
-        message += 'Server: %s\n' % event.server_name
-        message += 'Group: %s\n' % event.group
-        message += 'Logger: %s\n' % event.logger
-        message += 'Message: %s\n' % event.message
+        message += '%s\r\n' % ('\r\n'.join(event.error().encode('utf-8').splitlines()).strip)
+        message += 'Server: %s\r\n' % event.server_name
+        message += 'Group: %s\r\n' % event.group
+        message += 'Logger: %s\r\n' % event.logger
+        message += 'Message: %s\r\n' % event.message
 
         self.send_notification(title, message, link, project)
 
@@ -147,6 +179,7 @@ class PushoverNotifications(NotifyPlugin):
             'title': title,
             'url': link,
             'url_title': 'More info',
+            'sound': (self.get_option('sound', project) or 'pushover'),
             #'priority': self.get_option('priority', project),
         })
 
