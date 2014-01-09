@@ -25,38 +25,44 @@ You should have received a copy of the GNU General Public License
 along with Sentry-Pushover.  If not, see <http://www.gnu.org/licenses/>.
 '''
 
-from django import forms
+import time
 import logging
+
+from django import forms
+
 from sentry.conf import settings
-from sentry.plugins import Plugin
+from sentry.plugins.bases.notify import NotifyPlugin
+from sentry.conf import server
 
 import sentry_pushover
+
 import requests
 
 
 class PushoverSettingsForm(forms.Form):
 
-    userkey = forms.CharField(help_text='Your user key. See https://pushover.net/')
-    apikey = forms.CharField(help_text='Application API token. See https://pushover.net/apps/')
-
     choices = ((logging.CRITICAL, 'CRITICAL'), (logging.ERROR, 'ERROR'), (logging.WARNING,
                'WARNING'), (logging.INFO, 'INFO'), (logging.DEBUG, 'DEBUG'))
-    severity = forms.ChoiceField(choices=choices,
-                                 help_text="Don't send notifications for events below this level.")
 
-    priority = \
-        forms.BooleanField(required=False,
-                           help_text='High-priority notifications, also bypasses quiet hours.')
+    userkey = forms.CharField(help_text='Your user key. See https://pushover.net/')
+    apikey = forms.CharField(help_text='Application API token. See https://pushover.net/apps/')
+    new_only = forms.BooleanField(help_text='Only send new messages.', required=False)
+    severity = forms.ChoiceField(choices=choices, help_text="Don't send notifications for events below this level.")
+    priority = forms.BooleanField(required=False, help_text='High-priority notifications, also bypasses quiet hours.')
 
 
-class PushoverNotifications(Plugin):
+class PushoverNotifications(NotifyPlugin):
 
     author = 'Janez Troha'
     author_url = 'http://dz0ny.info'
+
     title = 'Pushover'
+    description = 'Event notification to Pushover.'
 
     conf_title = 'Pushover'
     conf_key = 'pushover'
+
+    slug = 'pushover'
 
     resource_links = [
         ('Bug Tracker', 'https://github.com/dz0ny/sentry-pushover/issues'),
@@ -72,20 +78,25 @@ class PushoverNotifications(Plugin):
     def is_setup(self, project):
         return all(self.get_option(key, project) for key in ('userkey', 'apikey'))
 
-    def post_process(
-        self,
-        group,
-        event,
-        is_new,
-        is_sample,
-        **kwargs
-        ):
+    def on_alert(self, alert, **kwargs):
+        project = alert.project
+        new_only = self.get_option('new_only', project)
+        
+        if not self.is_setup(project):
+            return 
 
-        if not is_new or not self.is_setup(event.project):
+    def post_process(self, group, event, is_new, is_sample, **kwargs):
+        project = event.project
+        new_only = self.get_option('new_only', project)
+
+        if not self.is_setup(project):
+            return 
+
+        if new_only and not is_new:
             return
 
         # https://github.com/getsentry/sentry/blob/master/src/sentry/models.py#L353
-        if event.level < int(self.get_option('severity', event.project)):
+        if event.level < int(self.get_option('severity', project)):
             return
 
         title = '%s: %s' % (event.get_level_display().upper(), event.error().split('\n')[0])
@@ -97,25 +108,20 @@ class PushoverNotifications(Plugin):
         message += 'Logger: %s\n' % event.logger
         message += 'Message: %s\n' % event.message
 
-        self.send_notification(title, message, link, event)
+        self.send_notification(title, message, link, project)
 
-    def send_notification(
-        self,
-        title,
-        message,
-        link,
-        event,
-        ):
+    def send_notification(self, title, message, link, project):
 
         # see https://pushover.net/api
 
-        params = {
-            'user': self.get_option('userkey', event.project),
-            'token': self.get_option('apikey', event.project),
+        params = ({
+            'user': self.get_option('userkey', project),
+            'token': self.get_option('apikey', project),
             'message': message,
             'title': title,
             'url': link,
             'url_title': 'More info',
-            'priority': self.get_option('priority', event.project),
-            }
+            'priority': self.get_option('priority', project),
+        })
+
         requests.post('https://api.pushover.net/1/messages.json', params=params)
