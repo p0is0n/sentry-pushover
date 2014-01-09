@@ -1,8 +1,6 @@
 {% spaceless %}
 {% autoescape off %}
-{{ event.message }}
-
-Logger: {{ event.logger }}
+Message: {{ event.message }}
 First Seen: {{ group.first_seen|date }}
 
 {% if tags %}{% for tag_key, tag_value in tags %}{{ tag_key }}: {{ tag_value }}
