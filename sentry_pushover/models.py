@@ -136,7 +136,7 @@ class PushoverNotifications(NotificationPlugin):
 
         title = ('[%s] %s' % (
             project.name.encode(API_CHARSET),
-            unicode(group.get_level_display().upper().encode(API_CHARSET)))
+            unicode(group.get_level_display().upper().encode(API_CHARSET))))
 
         link = group.get_absolute_url()
         message = render_to_string(message_template, ({
