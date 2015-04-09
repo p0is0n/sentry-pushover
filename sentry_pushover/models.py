@@ -48,8 +48,7 @@ import requests
 message_template = 'sentry_pushover/error.txt'
 message_template_alert = 'sentry_pushover/alert.txt'
 
-choices_levels = ((key, level.upper()) for key, level in LOG_LEVELS.iteritems()})
-
+choices_levels = ((i, level.upper()) for i, level in LOG_LEVELS.iteritems())
 choices_sounds = ((
     ('pushover', 'Pushover (default)'),
     ('bike', 'Bike'),
