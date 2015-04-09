@@ -35,10 +35,11 @@ from django.utils.safestring import mark_safe
 from django.template import Template
 
 from sentry.utils import settings
-from sentry.plugins.bases.notify import NotifyPlugin, NotifyConfigurationForm
+from sentry.plugins.bases.notify import NotificationPlugin, NotifyConfigurationForm
 from sentry.conf import server
 from sentry.utils.http import absolute_uri
 from sentry.web.helpers import render_to_string
+from sentry.constants import LOG_LEVELS
 
 import sentry_pushover
 import requests
@@ -47,13 +48,7 @@ import requests
 message_template = 'sentry_pushover/error.txt'
 message_template_alert = 'sentry_pushover/alert.txt'
 
-choices_levels = ((
-    (logging.CRITICAL, 'CRITICAL'), 
-    (logging.ERROR, 'ERROR'), 
-    (logging.WARNING, 'WARNING'), 
-    (logging.INFO, 'INFO'),
-    (logging.DEBUG, 'DEBUG')
-))
+choices_levels = dict({key: level.upper() for key, level in LOG_LEVELS.iteritems()})
 
 choices_sounds = ((
     ('pushover', 'Pushover (default)'),
@@ -80,6 +75,9 @@ choices_sounds = ((
     ('none', 'None (silent)')
 ))
 
+API_URL_MESSAGE = 'https://api.pushover.net/1/messages.json'
+API_CHARSET = 'utf-8'
+
 
 class PushoverSettingsForm(NotifyConfigurationForm):
 
@@ -91,7 +89,7 @@ class PushoverSettingsForm(NotifyConfigurationForm):
     priority = forms.BooleanField(required=False, help_text='High-priority notifications, also bypasses quiet hours.')
 
 
-class PushoverNotifications(NotifyPlugin):
+class PushoverNotifications(NotificationPlugin):
 
     BASE_MAXIMUM_MESSAGE_LENGTH = 512
 
@@ -112,7 +110,9 @@ class PushoverNotifications(NotifyPlugin):
     ]
 
     version = sentry_pushover.VERSION
+
     project_conf_form = PushoverSettingsForm
+    project_default_enabled = False
 
     def get_project_url(self, project):
         return absolute_uri(reverse('sentry-stream', args=[
@@ -137,8 +137,8 @@ class PushoverNotifications(NotifyPlugin):
             interface_list.append((interface.get_title(), mark_safe(body)))
 
         title = ('[%s] %s' % (
-            project.name.encode('utf-8'),
-            unicode(event.get_level_display()).upper().encode('utf-8')
+            project.name.encode(API_CHARSET),
+            unicode(event.get_level_display()).upper().encode(API_CHARSET)
         ))
 
         link = group.get_absolute_url()
@@ -152,9 +152,9 @@ class PushoverNotifications(NotifyPlugin):
 
         if len(message) > self.BASE_MAXIMUM_MESSAGE_LENGTH:
             message = message[:self.BASE_MAXIMUM_MESSAGE_LENGTH - 4] + ' ...'
-            message = message.encode('utf8')
+            message = message.encode(API_CHARSET)
         else:
-            message = message.encode('utf8')
+            message = message.encode(API_CHARSET)
 
         self.send_notification(title, message, link, project)
 
@@ -166,11 +166,11 @@ class PushoverNotifications(NotifyPlugin):
             return
 
         title = ('[{0}] ALERT'.format(
-            project.name.encode('utf-8')
+            project.name.encode(API_CHARSET)
         ))
 
         link = alert.get_absolute_url()
-        message = alert.message.encode('utf-8')
+        message = alert.message.encode(API_CHARSET)
 
         self.send_notification(title, message, link, project)
 
@@ -179,12 +179,12 @@ class PushoverNotifications(NotifyPlugin):
         new_only = self.get_option('new_only', project)
 
         if not self.is_configured(project):
-            return 
+            return
 
         if new_only and not is_new:
             return
 
-        if event.level < int(self.get_option('severity', project)):
+        if group.level < int(self.get_option('severity', project)):
             return
 
         if not self.should_notify(group, event):
@@ -204,4 +204,4 @@ class PushoverNotifications(NotifyPlugin):
             'priority': self.get_option('priority', project),
         })
 
-        requests.post('https://api.pushover.net/1/messages.json', params=params)
+        requests.post(API_URL_MESSAGE, params=params)
