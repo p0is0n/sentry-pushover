@@ -110,9 +110,7 @@ class PushoverNotifications(NotificationPlugin):
     ]
 
     version = sentry_pushover.VERSION
-
     project_conf_form = PushoverSettingsForm
-    project_default_enabled = False
 
     def get_project_url(self, project):
         return absolute_uri(reverse('sentry-stream', args=[
