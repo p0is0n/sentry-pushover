@@ -32,7 +32,7 @@ install_requires = [
 
 setup(
     name='sentry-pushover',
-    version='1.0.9',
+    version='1.1.0',
     author='Janez Troha',
     author_email='janez.troha@gmail.com',
     url='https://github.com/dz0ny/sentry-pushover',
