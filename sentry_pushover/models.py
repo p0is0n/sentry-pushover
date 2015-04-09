@@ -118,7 +118,8 @@ class PushoverNotifications(NotificationPlugin):
         ]))
 
     def is_configured(self, project):
-        return all(self.get_option(key, project) for key in ('userkey', 'apikey'))
+        return bool(all(self.get_option(key, project)
+                    for key in ('userkey', 'apikey')))
 
     def notify_users(self, group, event, fail_silently=False):
         project = event.project
@@ -135,8 +136,7 @@ class PushoverNotifications(NotificationPlugin):
 
         title = ('[%s] %s' % (
             project.name.encode(API_CHARSET),
-            unicode(event.get_level_display()).upper().encode(API_CHARSET)
-        ))
+            unicode(group.get_level_display().upper().encode(API_CHARSET)))
 
         link = group.get_absolute_url()
         message = render_to_string(message_template, ({
