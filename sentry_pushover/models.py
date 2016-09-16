@@ -74,6 +74,12 @@ choices_sounds = ((
     ('none', 'None (silent)')
 ))
 
+choices_priority = ((
+    ('0', 'Normal'),
+    ('-1', 'Quiet'),
+    ('1', 'High'),
+))
+
 API_URL_MESSAGE = 'https://api.pushover.net/1/messages.json'
 API_CHARSET = 'utf-8'
 
@@ -85,7 +91,7 @@ class PushoverSettingsForm(forms.Form):
     new_only = forms.BooleanField(help_text='Only send new messages.', required=False)
     severity = forms.ChoiceField(choices=choices_levels, help_text="Don't send notifications for events below this level.", required=True)
     sound = forms.ChoiceField(choices=choices_sounds, help_text="When sending notifications through the Pushover API, the sound parameter may be set to one of the following.", required=True)
-    priority = forms.BooleanField(required=False, help_text='High-priority notifications, also bypasses quiet hours.')
+    priority = forms.ChoiceField(choices=choices_priority, help_text="Priority notifications")
 
 
 class PushoverNotifications(Plugin):
@@ -195,7 +201,7 @@ class PushoverNotifications(Plugin):
             'url': link,
             'url_title': 'More info',
             'sound': (self.get_option('sound', project) or 'pushover'),
-            'priority': self.get_option('priority', project),
+            'priority': (self.get_option('priority', project) or 0),
         })
 
         requests.post(API_URL_MESSAGE, params=params)
