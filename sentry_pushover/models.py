@@ -35,7 +35,7 @@ from django.utils.safestring import mark_safe
 from django.template import Template
 
 from sentry.utils import settings
-from sentry.plugins.bases.notify import NotificationPlugin, NotifyConfigurationForm
+from sentry.plugins import Plugin
 from sentry.conf import server
 from sentry.utils.http import absolute_uri
 from sentry.web.helpers import render_to_string
@@ -78,17 +78,17 @@ API_URL_MESSAGE = 'https://api.pushover.net/1/messages.json'
 API_CHARSET = 'utf-8'
 
 
-class PushoverSettingsForm(NotifyConfigurationForm):
+class PushoverSettingsForm(forms.Form):
 
-    userkey = forms.CharField(help_text='Your user key. See https://pushover.net/')
-    apikey = forms.CharField(help_text='Application API token. See https://pushover.net/apps/')
+    userkey = forms.CharField(help_text='Your user key. See https://pushover.net/', required=True)
+    apikey = forms.CharField(help_text='Application API token. See https://pushover.net/apps/', required=True)
     new_only = forms.BooleanField(help_text='Only send new messages.', required=False)
-    severity = forms.ChoiceField(choices=choices_levels, help_text="Don't send notifications for events below this level.")
+    severity = forms.ChoiceField(choices=choices_levels, help_text="Don't send notifications for events below this level.", required=True)
     sound = forms.ChoiceField(choices=choices_sounds, help_text="When sending notifications through the Pushover API, the sound parameter may be set to one of the following.", required=True)
     priority = forms.BooleanField(required=False, help_text='High-priority notifications, also bypasses quiet hours.')
 
 
-class PushoverNotifications(NotificationPlugin):
+class PushoverNotifications(Plugin):
 
     BASE_MAXIMUM_MESSAGE_LENGTH = 512
 
@@ -118,7 +118,8 @@ class PushoverNotifications(NotificationPlugin):
         ]))
 
     def is_configured(self, project):
-        return bool(all(self.get_option(key, project) for key in ('userkey', 'apikey')))
+        return bool(all(self.get_option(key, project)
+                    for key in ('userkey', 'apikey', 'severity')))
 
     def notify_users(self, group, event, fail_silently=False):
         project = event.project
@@ -135,8 +136,7 @@ class PushoverNotifications(NotificationPlugin):
 
         title = ('[%s] %s' % (
             project.name.encode(API_CHARSET),
-            unicode(event.get_level_display()).upper().encode(API_CHARSET)
-        ))
+            unicode(group.get_level_display().upper().encode(API_CHARSET))))
 
         link = group.get_absolute_url()
         message = render_to_string(message_template, ({
@@ -182,9 +182,6 @@ class PushoverNotifications(NotificationPlugin):
             return
 
         if group.level < int(self.get_option('severity', project)):
-            return
-
-        if not self.should_notify(group, event):
             return
 
         self.notify_users(group, event)
