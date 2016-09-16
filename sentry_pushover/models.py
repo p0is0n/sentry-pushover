@@ -118,7 +118,7 @@ class PushoverNotifications(NotificationPlugin):
         ]))
 
     def is_configured(self, project):
-        return all(self.get_option(key, project) for key in ('userkey', 'apikey'))
+        return bool(all(self.get_option(key, project) for key in ('userkey', 'apikey')))
 
     def notify_users(self, group, event, fail_silently=False):
         project = event.project
